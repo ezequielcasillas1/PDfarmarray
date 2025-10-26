@@ -47,9 +47,6 @@
     "extra": {
       "router": {
         "origin": false
-      },
-      "eas": {
-        "projectId": "placeholder-will-be-set-by-eas-init"
       }
     },
     "cli": {

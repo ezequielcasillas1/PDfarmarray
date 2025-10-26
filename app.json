@@ -20,7 +20,9 @@
         "NSCameraUsageDescription": "PDF Farm uses your camera for document scanning.",
         "NSPhotoLibraryAddUsageDescription": "PDF Farm saves your generated PDFs to your device.",
         "NSPhotoLibraryUsageDescription": "PDF Farm imports images for PDF creation.",
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -42,15 +44,13 @@
         {
           "iCloudContainerEnvironment": "Production"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "router": {
         "origin": false
       }
-    },
-    "cli": {
-      "appVersionSource": "remote"
     }
   }
 }

@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
-import { Card } from '../../components/ui';
+import { Card, Input } from '../../components/ui';
+import { FilterModal, FilterOptions } from '../../components/modals/FilterModal';
 
-const TABS = ['Trending', 'New', 'Top Rated', 'My Uploads'];
+const TABS = ['Trending', 'New', 'Top Rated', 'Free PDFs', 'My Uploads'];
 
 const MOCK_PDFS = [
   {
@@ -15,6 +16,7 @@ const MOCK_PDFS = [
     price: 5,
     rating: 4.8,
     downloads: 1234,
+    category: 'Ebooks',
   },
   {
     id: '2',
@@ -23,6 +25,7 @@ const MOCK_PDFS = [
     price: 3,
     rating: 4.9,
     downloads: 890,
+    category: 'Articles',
   },
   {
     id: '3',
@@ -31,6 +34,7 @@ const MOCK_PDFS = [
     price: 4,
     rating: 4.7,
     downloads: 567,
+    category: 'Templates',
   },
   {
     id: '4',
@@ -39,20 +43,129 @@ const MOCK_PDFS = [
     price: 6,
     rating: 4.9,
     downloads: 2345,
+    category: 'Templates',
+  },
+  {
+    id: '5',
+    title: 'Free Starter Guide to SEO',
+    author: 'Tom Anderson',
+    price: 0,
+    rating: 4.6,
+    downloads: 3456,
+    category: 'Resource Guides',
+  },
+  {
+    id: '6',
+    title: 'Free Budget Planner',
+    author: 'Lisa Brown',
+    price: 0,
+    rating: 4.8,
+    downloads: 2890,
+    category: 'Printables',
+  },
+  {
+    id: '7',
+    title: 'Free Meal Prep Worksheet',
+    author: 'Chris Green',
+    price: 0,
+    rating: 4.7,
+    downloads: 1678,
+    category: 'Worksheets',
   },
 ];
 
 export default function MarketScreen() {
   const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    priceRange: { min: 0, max: 999 },
+    categories: [],
+    rating: 0,
+    sortBy: 'Popular',
+    showFreeOnly: false,
+  });
+
+  const handleApplyFilters = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+  };
+
+  const getFilteredPDFs = () => {
+    let filtered = MOCK_PDFS;
+
+    // Filter by tab
+    if (activeTab === 0) { // Trending
+      filtered = filtered.sort((a, b) => b.downloads - a.downloads);
+    } else if (activeTab === 1) { // New
+      filtered = [...filtered].reverse();
+    } else if (activeTab === 2) { // Top Rated
+      filtered = filtered.sort((a, b) => b.rating - a.rating);
+    } else if (activeTab === 3) { // Free PDFs
+      filtered = filtered.filter(pdf => pdf.price === 0);
+    } else if (activeTab === 4) { // My Uploads
+      filtered = [];
+    }
+
+    // Apply search
+    if (searchQuery) {
+      filtered = filtered.filter(pdf =>
+        pdf.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pdf.author.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply filters
+    if (filters.showFreeOnly) {
+      filtered = filtered.filter(pdf => pdf.price === 0);
+    }
+    if (filters.priceRange.min > 0 || filters.priceRange.max < 999) {
+      filtered = filtered.filter(
+        pdf => pdf.price >= filters.priceRange.min && pdf.price <= filters.priceRange.max
+      );
+    }
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(pdf => filters.categories.includes(pdf.category));
+    }
+    if (filters.rating > 0) {
+      filtered = filtered.filter(pdf => pdf.rating >= filters.rating);
+    }
+
+    return filtered;
+  };
+
+  const filteredPDFs = getFilteredPDFs();
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>PDF Bazaar</Text>
-        <Pressable style={styles.filterButton}>
+        <Pressable 
+          style={styles.filterButton}
+          onPress={() => setShowFilterModal(true)}
+        >
           <Ionicons name="filter" size={24} color={theme.colors.primary} />
+          {(filters.categories.length > 0 || filters.rating > 0 || filters.showFreeOnly || 
+            filters.priceRange.min > 0 || filters.priceRange.max < 999) && (
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>
+                {filters.categories.length + (filters.rating > 0 ? 1 : 0) + 
+                 (filters.showFreeOnly ? 1 : 0) + 
+                 (filters.priceRange.min > 0 || filters.priceRange.max < 999 ? 1 : 0)}
+              </Text>
+            </View>
+          )}
         </Pressable>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Input
+          placeholder="Search PDFs, creators..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+        />
       </View>
 
       {/* Tabs */}
@@ -80,9 +193,14 @@ export default function MarketScreen() {
         />
       </View>
 
+      {/* Result Count */}
+      <View style={styles.resultBar}>
+        <Text style={styles.resultText}>{filteredPDFs.length} results</Text>
+      </View>
+
       {/* PDF Grid */}
       <FlatList
-        data={MOCK_PDFS}
+        data={filteredPDFs}
         numColumns={2}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.gridContainer}
@@ -122,6 +240,26 @@ export default function MarketScreen() {
             </View>
           </Card>
         )}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="search" size={64} color={theme.colors.gray[300]} />
+            <Text style={styles.emptyText}>
+              {activeTab === 4 ? 'No uploads yet' : 'No PDFs found'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {activeTab === 4 
+                ? 'Start creating your first PDF' 
+                : 'Try adjusting your filters'}
+            </Text>
+          </View>
+        }
+      />
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        onApplyFilters={handleApplyFilters}
       />
     </SafeAreaView>
   );
@@ -145,6 +283,38 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: theme.spacing.sm,
+    position: 'relative',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: theme.colors.error,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.white,
+  },
+  searchContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+  },
+  searchInput: {
+    marginBottom: 0,
+  },
+  resultBar: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
+  },
+  resultText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
   },
   tabsContainer: {
     paddingHorizontal: theme.spacing.lg,
@@ -234,6 +404,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xxxl * 2,
+  },
+  emptyText: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.gray[600],
+    marginTop: theme.spacing.md,
+  },
+  emptySubtext: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[500],
+    marginTop: theme.spacing.xs,
   },
 });
 

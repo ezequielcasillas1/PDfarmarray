@@ -29,7 +29,8 @@ export default function HomeScreen() {
   const [currentCredits] = useState(0);
 
   const navigateToCategory = (categoryId: string) => {
-    router.push(`/(tabs)/category/${categoryId}` as any);
+    // Navigate to marketplace instead
+    router.push('/(tabs)/market');
   };
 
   return (

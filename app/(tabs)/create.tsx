@@ -6,18 +6,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../styles/theme';
 import { Button, Card, Input, FilePicker } from '../../components/ui';
+import { PDFCanvas } from '../../components/pdf-builder/PDFCanvas';
 
-const STEPS = ['Type', 'Details', 'Content', 'Preview'];
+const STEPS = ['Type', 'Build', 'Details', 'Preview'];
 
 export default function CreateScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
-  const [selectedType, setSelectedType] = useState<'ai' | 'upload' | null>(null);
+  const [selectedType, setSelectedType] = useState<'ai' | 'build' | 'upload' | null>(null);
+  const [pdfElements, setPdfElements] = useState<any[]>([]);
 
   const handleFileSelect = (file: DocumentPicker.DocumentPickerAsset) => {
     setUploadedFile(file);
     setSelectedType('upload');
-    setCurrentStep(1);
+    setCurrentStep(2); // Skip build step for uploads
   };
 
   return (
@@ -82,7 +84,7 @@ export default function CreateScreen() {
                   style={styles.typeCard}
                   onPress={() => {
                     setSelectedType('ai');
-                    setCurrentStep(1);
+                    setCurrentStep(2); // Skip build step for AI
                   }}
                 >
                   <LinearGradient
@@ -97,6 +99,25 @@ export default function CreateScreen() {
                   </Text>
                 </Pressable>
 
+                <Pressable 
+                  style={styles.typeCard}
+                  onPress={() => {
+                    setSelectedType('build');
+                    setCurrentStep(1); // Go to build step
+                  }}
+                >
+                  <LinearGradient
+                    colors={['#10B981', '#059669']}
+                    style={styles.typeGradient}
+                  >
+                    <Ionicons name="construct" size={40} color={theme.colors.white} />
+                  </LinearGradient>
+                  <Text style={styles.typeTitle}>Build PDF</Text>
+                  <Text style={styles.typeDescription}>
+                    Drag & drop elements to build your PDF manually
+                  </Text>
+                </Pressable>
+
                 <View style={styles.typeCard}>
                   <LinearGradient
                     colors={['#F28D35', '#F59E0B']}
@@ -106,7 +127,7 @@ export default function CreateScreen() {
                   </LinearGradient>
                   <Text style={styles.typeTitle}>Upload PDF</Text>
                   <Text style={styles.typeDescription}>
-                    Drag & drop or tap to upload an existing PDF
+                    Upload an existing PDF file
                   </Text>
                   
                   <View style={styles.filePickerContainer}>
@@ -117,7 +138,19 @@ export default function CreateScreen() {
             </View>
           )}
 
-          {currentStep === 1 && (
+          {currentStep === 1 && selectedType === 'build' && (
+            <View>
+              <Text style={styles.stepTitle}>Build Your PDF</Text>
+              <Text style={styles.stepSubtitle}>
+                Drag and drop elements to create your PDF content
+              </Text>
+              <View style={styles.canvasContainer}>
+                <PDFCanvas onElementsChange={setPdfElements} />
+              </View>
+            </View>
+          )}
+
+          {currentStep === 2 && (
             <View>
               <Text style={styles.stepTitle}>Add Details</Text>
               {uploadedFile && (
@@ -250,7 +283,18 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xl,
     fontWeight: theme.fontWeight.bold,
     color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  stepSubtitle: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.gray[600],
     marginBottom: theme.spacing.lg,
+  },
+  canvasContainer: {
+    height: 500,
+    backgroundColor: theme.colors.gray[50],
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
   },
   typeOptions: {
     gap: theme.spacing.md,

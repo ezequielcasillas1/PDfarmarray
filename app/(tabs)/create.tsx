@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../../styles/theme';
-import { Button, Card, Input } from '../../components/ui';
+import { Button, Card, Input, FilePicker } from '../../components/ui';
 
 const STEPS = ['Type', 'Details', 'Content', 'Preview'];
 
 export default function CreateScreen() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
+  const [selectedType, setSelectedType] = useState<'ai' | 'upload' | null>(null);
+
+  const handleFileSelect = (file: DocumentPicker.DocumentPickerAsset) => {
+    setUploadedFile(file);
+    setSelectedType('upload');
+    setCurrentStep(1);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,7 +78,13 @@ export default function CreateScreen() {
             <View>
               <Text style={styles.stepTitle}>Choose PDF Type</Text>
               <View style={styles.typeOptions}>
-                <Pressable style={styles.typeCard}>
+                <Pressable 
+                  style={styles.typeCard}
+                  onPress={() => {
+                    setSelectedType('ai');
+                    setCurrentStep(1);
+                  }}
+                >
                   <LinearGradient
                     colors={['#5C67F2', '#7C3AED']}
                     style={styles.typeGradient}
@@ -82,7 +97,7 @@ export default function CreateScreen() {
                   </Text>
                 </Pressable>
 
-                <Pressable style={styles.typeCard}>
+                <View style={styles.typeCard}>
                   <LinearGradient
                     colors={['#F28D35', '#F59E0B']}
                     style={styles.typeGradient}
@@ -91,9 +106,13 @@ export default function CreateScreen() {
                   </LinearGradient>
                   <Text style={styles.typeTitle}>Upload PDF</Text>
                   <Text style={styles.typeDescription}>
-                    Upload an existing PDF file
+                    Drag & drop or tap to upload an existing PDF
                   </Text>
-                </Pressable>
+                  
+                  <View style={styles.filePickerContainer}>
+                    <FilePicker onFileSelect={handleFileSelect} />
+                  </View>
+                </View>
               </View>
             </View>
           )}
@@ -101,6 +120,20 @@ export default function CreateScreen() {
           {currentStep === 1 && (
             <View>
               <Text style={styles.stepTitle}>Add Details</Text>
+              {uploadedFile && (
+                <Card style={styles.uploadedFileCard}>
+                  <Ionicons name="document-text" size={24} color={theme.colors.primary} />
+                  <View style={styles.uploadedFileInfo}>
+                    <Text style={styles.uploadedFileName} numberOfLines={1}>
+                      {uploadedFile.name}
+                    </Text>
+                    <Text style={styles.uploadedFileSize}>
+                      {(uploadedFile.size! / 1024).toFixed(1)} KB
+                    </Text>
+                  </View>
+                  <Ionicons name="checkmark-circle" size={24} color={theme.colors.success} />
+                </Card>
+              )}
               <Card style={styles.formCard}>
                 <Input label="Title" placeholder="Enter PDF title" />
                 <Input
@@ -227,6 +260,30 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     ...theme.shadows.md,
+    marginBottom: theme.spacing.md,
+  },
+  filePickerContainer: {
+    marginTop: theme.spacing.lg,
+  },
+  uploadedFileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
+  },
+  uploadedFileInfo: {
+    flex: 1,
+  },
+  uploadedFileName: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.text,
+  },
+  uploadedFileSize: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.gray[600],
+    marginTop: theme.spacing.xs,
   },
   typeGradient: {
     width: 80,

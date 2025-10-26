@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../styles/theme';
 import { Input, Card } from '../../components/ui';
+import { CreditModal } from '../../components/modals/CreditModal';
 
 const CATEGORIES = [
   { id: '1', title: 'Ebooks', icon: 'book', emoji: '📚' },
@@ -22,6 +24,14 @@ const FEATURED_PDFS = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [creditModalVisible, setCreditModalVisible] = useState(false);
+  const [currentCredits] = useState(0);
+
+  const navigateToCategory = (categoryId: string) => {
+    router.push(`/(tabs)/category/${categoryId}` as any);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -31,9 +41,12 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Welcome to</Text>
             <Text style={styles.title}>PDF Farm 🌱</Text>
           </View>
-          <Pressable style={styles.walletButton}>
+          <Pressable 
+            style={styles.walletButton}
+            onPress={() => setCreditModalVisible(true)}
+          >
             <Ionicons name="wallet" size={24} color={theme.colors.primary} />
-            <Text style={styles.walletText}>0</Text>
+            <Text style={styles.walletText}>{currentCredits}</Text>
           </Pressable>
         </View>
 
@@ -55,7 +68,10 @@ export default function HomeScreen() {
             scrollEnabled={false}
             columnWrapperStyle={styles.categoryRow}
             renderItem={({ item }) => (
-              <Pressable style={styles.categoryCard}>
+              <Pressable 
+                style={styles.categoryCard}
+                onPress={() => navigateToCategory(item.id)}
+              >
                 <Text style={styles.categoryEmoji}>{item.emoji}</Text>
                 <Text style={styles.categoryTitle}>{item.title}</Text>
               </Pressable>
@@ -85,12 +101,19 @@ export default function HomeScreen() {
                   <Ionicons name="star" size={16} color={theme.colors.secondary} />
                 </View>
               </Card>
-            )}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+          )}
+        />
+      </View>
+    </ScrollView>
+
+    {/* Credit Modal */}
+    <CreditModal 
+      visible={creditModalVisible}
+      onClose={() => setCreditModalVisible(false)}
+      currentCredits={currentCredits}
+    />
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({

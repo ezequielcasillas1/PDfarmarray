@@ -54,11 +54,11 @@ export const theme = {
     xxxl: 40,
   },
   fontWeight: {
-    normal: '400' as any,
-    medium: '500' as any,
-    semibold: '600' as any,
-    bold: '700' as any,
-  },
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+  } as const,
   shadows: {
     sm: {
       shadowColor: '#000',
